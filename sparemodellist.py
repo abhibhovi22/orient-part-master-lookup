@@ -223,16 +223,16 @@ st.dataframe(
 # -----------------------------------------------------------------------------
 # EXCEL DOWNLOAD
 # -----------------------------------------------------------------------------
-output = io.BytesIO()
-with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
-    final_table.to_excel(writer, index=False, sheet_name="Model_Parts")
-excel_data = output.getvalue()
+# -----------------------------------------------------------------------------
+# CSV DOWNLOAD (No external engine required)
+# -----------------------------------------------------------------------------
+csv_data = final_table.to_csv(index=False).encode("utf-8")
 
 st.download_button(
-    label="📥 Download Part List as Excel",
-    data=excel_data,
-    file_name=f"Parts_{selected_model_code}.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    label="📥 Download Part List as CSV",
+    data=csv_data,
+    file_name=f"Parts_{selected_model_code}.csv",
+    mime="text/csv",
 )
     label="📥 Download Part List as Excel",
     data=excel_data,
