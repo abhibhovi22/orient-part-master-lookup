@@ -17,11 +17,21 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__)) if "__file__" in locals() 
 INVENTORY_FILE_PATH = os.path.join(BASE_DIR, "CurrentInventory_oelkarnataka31.csv")
 PART_MASTER_FILE_PATH = os.path.join(BASE_DIR, "PartModelMaster_oelkarnataka31.csv")
 
-# Fallback check
+# Fallback checks
 if not os.path.exists(INVENTORY_FILE_PATH):
     INVENTORY_FILE_PATH = r"C:\Users\91924\Coding\CurrentInventory_oelkarnataka31.csv"
 if not os.path.exists(PART_MASTER_FILE_PATH):
     PART_MASTER_FILE_PATH = r"C:\Users\91924\Coding\PartModelMaster_oelkarnataka31.csv"
+
+
+def robust_read_csv(filepath):
+    """Safely loads CSVs across various Windows/Linux encodings."""
+    for enc in ["utf-8", "latin1", "cp1252", "iso-8859-1", "utf-8-sig"]:
+        try:
+            return pd.read_csv(filepath, low_memory=False, encoding=enc)
+        except UnicodeDecodeError:
+            continue
+    return pd.read_csv(filepath, low_memory=False, encoding="utf-8", encoding_errors="replace")
 
 
 # -----------------------------------------------------------------------------
@@ -30,7 +40,7 @@ if not os.path.exists(PART_MASTER_FILE_PATH):
 @st.cache_data(show_spinner="Loading Master Data & Current Inventory...")
 def load_and_preprocess_data(inv_path, pm_path):
     # 1. Load Inventory CSV
-    df_inv = pd.read_csv(inv_path, low_memory=False, encoding="utf-8", encoding_errors="replace")
+    df_inv = robust_read_csv(inv_path)
     df_inv["PART_CLEAN"] = (
         df_inv["PART_NO"].astype(str).str.strip().str.rstrip("'").str.strip()
     )
@@ -49,8 +59,8 @@ def load_and_preprocess_data(inv_path, pm_path):
         })
     )
 
-    # 2. Load Part Model Master CSV
-    df_pm = pd.read_csv(pm_path, low_memory=False, encoding="utf-8", encoding_errors="replace")
+    # 2. Load Part Model Master CSV (Fans + Appliances)
+    df_pm = robust_read_csv(pm_path)
     df_pm["PART_CLEAN"] = (
         df_pm["PART"].astype(str).str.strip().str.rstrip("'").str.strip()
     )
@@ -76,14 +86,14 @@ try:
     )
 except Exception as e:
     st.error(f"Error loading files: {e}")
-    st.info(f"Looking in: {BASE_DIR}. Please make sure both CSV files exist.")
+    st.info(f"Looking in: {BASE_DIR}. Please ensure both CSV files exist.")
     st.stop()
 
 # -----------------------------------------------------------------------------
 # SIDEBAR CONTROLS
 # -----------------------------------------------------------------------------
 st.title("Orient Electric — Model Part Consumption Lookup")
-st.caption("Look up consumable Bill of Materials (BOM) and live stock availability by model.")
+st.caption("Look up consumable Bill of Materials (BOM) and live stock availability by model (Fans & Appliances).")
 
 with st.sidebar:
     st.header("Search Filters")
@@ -106,7 +116,7 @@ selected_option = st.selectbox(
     "Type Model Code or Model Description:",
     options=search_options,
     index=0,
-    help="Start typing any part of the model number or fan name.",
+    help="Start typing any model code (e.g., CP0801H, CD5002B) or name (e.g., Magic, Maverick, Frost Air).",
 )
 
 if not selected_option or selected_option == "-- Select a Model --":
@@ -155,7 +165,7 @@ elif filter_stock == "Out of Stock Only":
 else:
     display_df = merged.copy()
 
-# Sort available parts to the top (highest good stock first)
+# Sort available parts to top
 display_df = display_df.sort_values(
     by=["TOTAL_GOOD_STOCK", "PART_CLEAN"],
     ascending=[False, True]
@@ -224,7 +234,7 @@ st.dataframe(
 )
 
 # -----------------------------------------------------------------------------
-# DOWNLOAD BUTTON (utf-8-sig ensures Windows Excel opens special characters cleanly)
+# DOWNLOAD BUTTON (utf-8-sig format for Excel compatibility)
 # -----------------------------------------------------------------------------
 csv_data = final_table.to_csv(index=False).encode("utf-8-sig")
 
