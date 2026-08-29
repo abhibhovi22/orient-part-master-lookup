@@ -92,7 +92,7 @@ except Exception as e:
 # -----------------------------------------------------------------------------
 # SIDEBAR CONTROLS
 # -----------------------------------------------------------------------------
-st.title("Orient Electric — Model Part Consumption Lookup")
+st.title("Shri Mallikarjun Traders")
 st.caption("Look up consumable Bill of Materials (BOM) and live stock availability by model (Fans & Appliances).")
 
 with st.sidebar:
