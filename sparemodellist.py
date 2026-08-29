@@ -155,6 +155,12 @@ elif filter_stock == "Out of Stock Only":
 else:
     display_df = merged.copy()
 
+# Sort available parts to the top (highest good stock first)
+display_df = display_df.sort_values(
+    by=["TOTAL_GOOD_STOCK", "PART_CLEAN"],
+    ascending=[False, True]
+).reset_index(drop=True)
+
 # -----------------------------------------------------------------------------
 # KPI METRICS
 # -----------------------------------------------------------------------------
@@ -218,9 +224,9 @@ st.dataframe(
 )
 
 # -----------------------------------------------------------------------------
-# DOWNLOAD BUTTON (CSV format, avoids missing external Excel engines)
+# DOWNLOAD BUTTON (utf-8-sig ensures Windows Excel opens special characters cleanly)
 # -----------------------------------------------------------------------------
-csv_data = final_table.to_csv(index=False).encode("utf-8")
+csv_data = final_table.to_csv(index=False).encode("utf-8-sig")
 
 st.download_button(
     label="📥 Download Part List as CSV",
